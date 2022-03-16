@@ -1,0 +1,17 @@
+[tool.poetry]
+name = "myapp"
+version = "0.1.0"
+description = "saleor apps"
+authors = ["Karolina"]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+saleor-app = {git = "https://github.com/saleor/saleor-app-framework-python.git", rev = "main"}
+
+[tool.poetry.dev-dependencies]
+black = "^22.1.0"
+pylint = "^2.12.2"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
