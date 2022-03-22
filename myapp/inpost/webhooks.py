@@ -14,4 +14,5 @@ async def shipping_list_methods_for_checkout(
     :param saleor_domain:
     :return:
     """
+    print(payload, saleor_domain)
     await shipping_list_methods_for_checkout(payload, saleor_domain)

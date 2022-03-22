@@ -11,7 +11,7 @@ from saleor_app.schemas.core import DomainName, WebhookData
 from saleor_app.schemas.manifest import Manifest
 from saleor_app.schemas.utils import LazyUrl
 from sqlmodel import Session, select
-from env.manage import (
+from myapp.configuration.settings import (
     DOMAIN_IP,
     DATA_PRIVACY_URL,
     HOMEPAGE_URL,
@@ -36,14 +36,13 @@ class Settings(BaseSettings):
 
 settings = Settings(
     debug=True,
-    development_auth_token="test_token",
+    development_auth_token="token_test",
 )
 
 
 async def validate_domain(saleor_domain: DomainName) -> bool:
     """This def validate_domain
     and return saleor_domain under DOMAIN_IP"""
-
     return saleor_domain == DOMAIN_IP
 
 
@@ -57,15 +56,11 @@ async def validate_domain_db(saleor_domain: str):
     When saleor_domain is active def validate_domain_db return True.
     When saleor_domain isn't active def validate_domain_db return False
     """
-    import pdb
-
-    pdb.set_trace()
 
     try:
-
         with Session(engine) as session:
             query = select(Keys).where(
-                Keys.is_active, Keys.saleor_domain == saleor_domain
+                Keys.is_active.is_(True), Keys.saleor_domain == saleor_domain
             )
 
             results = session.exec(query)
@@ -74,7 +69,6 @@ async def validate_domain_db(saleor_domain: str):
                 return keys
 
     except SaleorDomainNotFound as saleor_domain_not_found:
-
         if not keys.is_active:
             print("Saleor domain for 'is_active' == False")
             return False
@@ -113,7 +107,7 @@ manifest = Manifest(
     homepage_url=HOMEPAGE_URL,
     support_url=SUPPORT_URL,
     id=ID,
-    permissions=["MANAGE_PRODUCTS", "MANAGE_USERS"],
+    permissions=["MANAGE_PRODUCTS", "MANAGE_USERS", "MANAGE_ORDERS"],
     app_url=LazyUrl(APP_URL),
     extensions=[],
 )

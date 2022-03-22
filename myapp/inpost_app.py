@@ -1,7 +1,7 @@
 import requests
 
 from myapp.app import app
-from env.manage import INPOST_URL
+from myapp.configuration.settings import INPOST_URL
 
 INPOST_API_URL = INPOST_URL
 

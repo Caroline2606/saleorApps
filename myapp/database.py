@@ -1,5 +1,5 @@
 from sqlmodel import create_engine, SQLModel
-from env.manage import FILE_NAME
+from myapp.configuration.settings import FILE_NAME
 
 SQLITE_FILE_NAME = FILE_NAME
 sqlite_url = f"sqlite:///{SQLITE_FILE_NAME}"
