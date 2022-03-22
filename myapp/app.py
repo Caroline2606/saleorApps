@@ -6,6 +6,7 @@ from fastapi.responses import HTMLResponse, PlainTextResponse
 from pydantic import BaseSettings
 from saleor_app.app import SaleorApp
 from saleor_app.deps import ConfigurationFormDeps
+from saleor_app.schemas.handlers import SaleorEventType
 from saleor_app.schemas.core import DomainName, WebhookData
 from saleor_app.schemas.manifest import Manifest
 from saleor_app.schemas.utils import LazyUrl
@@ -21,6 +22,7 @@ from env.manage import (
 
 from myapp.database import create_db_and_tables, engine
 from myapp.inpost.models import Keys
+from myapp.inpost.webhooks import shipping_list_methods_for_checkout
 
 from myapp.inpost.router import router as inpost_router
 
@@ -55,17 +57,22 @@ async def validate_domain_db(saleor_domain: str):
     When saleor_domain is active def validate_domain_db return True.
     When saleor_domain isn't active def validate_domain_db return False
     """
+    import pdb
+
+    pdb.set_trace()
 
     try:
 
         with Session(engine) as session:
             query = select(Keys).where(
-                Keys.is_active.is_(True), Keys.saleor_domain == saleor_domain
+                Keys.is_active, Keys.saleor_domain == saleor_domain
             )
+
             results = session.exec(query)
 
             for keys in results:
-                return True
+                return keys
+
     except SaleorDomainNotFound as saleor_domain_not_found:
 
         if not keys.is_active:
@@ -111,7 +118,6 @@ manifest = Manifest(
     extensions=[],
 )
 
-
 app = SaleorApp(
     manifest=manifest,
     validate_domain=validate_domain_db,
@@ -122,6 +128,10 @@ app = SaleorApp(
 app.include_webhook_router(get_webhook_details=get_webhook_details)
 app.include_router(inpost_router)
 app.include_saleor_app_routes()
+
+app.webhook_router.http_event_route(SaleorEventType.SHIPPING_LIST_METHODS_FOR_CHECKOUT)(
+    shipping_list_methods_for_checkout
+)
 
 
 @app.on_event("startup")
