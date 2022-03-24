@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Optional
 
 from fastapi.param_functions import Depends
@@ -10,7 +11,8 @@ from saleor_app.schemas.handlers import SaleorEventType
 from saleor_app.schemas.core import DomainName, WebhookData
 from saleor_app.schemas.manifest import Manifest
 from saleor_app.schemas.utils import LazyUrl
-from sqlmodel import Session, select
+from sqlmodel import Session
+from sqlalchemy import select
 from myapp.configuration.settings import (
     DOMAIN_IP,
     DATA_PRIVACY_URL,
@@ -20,7 +22,7 @@ from myapp.configuration.settings import (
     APP_URL,
 )
 
-from myapp.database import create_db_and_tables, engine
+from myapp.database import create_db_and_tables, engine, SessionLocal
 from myapp.inpost.models import Keys
 from myapp.inpost.webhooks import shipping_list_methods_for_checkout
 
@@ -40,33 +42,42 @@ settings = Settings(
 )
 
 
-async def validate_domain(saleor_domain: DomainName) -> bool:
-    """This def validate_domain
-    and return saleor_domain under DOMAIN_IP"""
-    return saleor_domain == DOMAIN_IP
+async def validate_domain(saleor_domain: str) -> bool:
+    """This def validate_domain"""
+    logging.debug("validating domain %s", saleor_domain)
+
+    with SessionLocal() as session:
+        db_config = await Keys.get_domain_config(session, saleor_domain)
+
+    if db_config:
+        return True
+
+    return False
 
 
 class SaleorDomainNotFound(Exception):
     """This is class for created Exception"""
 
 
-async def validate_domain_db(saleor_domain: str):
+async def validate_domain_db(saleor_domain: str, saleor_auth_token: str):
     """
     This def checking if saleor_domain is in database.
     When saleor_domain is active def validate_domain_db return True.
     When saleor_domain isn't active def validate_domain_db return False
     """
-
+    # breakpoint()
     try:
         with Session(engine) as session:
             query = select(Keys).where(
-                Keys.is_active.is_(True), Keys.saleor_domain == saleor_domain
+                Keys.is_active.is_(True),
+                Keys.saleor_domain == saleor_domain,
+                Keys.saleor_auth_token == saleor_auth_token,
             )
+            # breakpoint()
 
             results = session.exec(query)
-
             for keys in results:
-                return keys
+                return True
 
     except SaleorDomainNotFound as saleor_domain_not_found:
         if not keys.is_active:
@@ -75,26 +86,51 @@ async def validate_domain_db(saleor_domain: str):
         return saleor_domain_not_found
 
 
+class KeysMissing(Exception):
+    pass
+
+
 async def store_app_data(
     saleor_domain: DomainName, auth_token: str, webhook_data: WebhookData
 ):
     """This def called store_app_data"""
 
-    print("Called store_app_data")
-    print(saleor_domain)
-    print(auth_token)
-    print(webhook_data)
+    logging.debug("storing app data %s", saleor_domain)
+
+    with SessionLocal() as session:
+
+        config = await Keys.get_domain_config(session, saleor_domain)
+
+        if not config:
+            raise KeysMissing("Keys missing")
+
+        # breakpoint()
+        config.saleor_domain = saleor_domain
+        # breakpoint()
+        config.saleor_auth_token = auth_token
+
+        if webhook_data:
+            config.webhook_id = webhook_data.webhook_id
+            config.saleor_webhook_secret = webhook_data.webhook_secret_key
+
+        session.commit()
 
 
-async def get_webhook_details() -> WebhookData:
+async def get_webhook_details(saleor_domain: DomainName):
     """
     This def return webhook_details:
     - webhook_id
     - webhook_secret_key
     """
+    # breakpoint()
+    with SessionLocal() as session:
+        config = await Keys.get_domain_config(session, saleor_domain)
+        if not config:
+            raise KeysMissing("Keys missing")
+
     return WebhookData(
-        webhook_id="webhook-id",
-        webhook_secret_key="webhook-secret-key",
+        webhook_id=config.webhook_id,
+        webhook_secret_key=config.webhook_secret,
     )
 
 
