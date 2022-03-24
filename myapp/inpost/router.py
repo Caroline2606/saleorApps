@@ -3,7 +3,7 @@ from typing import List, Optional
 import requests
 from fastapi import APIRouter
 from sqlmodel import Session, select
-from env.manage import INPOST_URL, VALIDATE_IP
+from myapp.configuration.settings import INPOST_URL, VALIDATE_IP
 
 from myapp.database import engine
 from myapp.inpost import models

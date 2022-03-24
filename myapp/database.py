@@ -1,5 +1,6 @@
+from sqlalchemy.orm import sessionmaker
 from sqlmodel import create_engine, SQLModel
-from env.manage import FILE_NAME
+from myapp.configuration.settings import FILE_NAME
 
 SQLITE_FILE_NAME = FILE_NAME
 sqlite_url = f"sqlite:///{SQLITE_FILE_NAME}"
@@ -12,3 +13,6 @@ def create_db_and_tables():
     for create database and tables"""
 
     SQLModel.metadata.create_all(engine)
+
+
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
