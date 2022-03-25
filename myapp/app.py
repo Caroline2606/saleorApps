@@ -59,7 +59,7 @@ class SaleorDomainNotFound(Exception):
     """This is class for created Exception"""
 
 
-async def validate_domain_db(saleor_domain: str, saleor_auth_token: str):
+async def validate_domain_db(saleor_domain: str):
     """
     This def checking if saleor_domain is in database.
     When saleor_domain is active def validate_domain_db return True.
@@ -71,7 +71,6 @@ async def validate_domain_db(saleor_domain: str, saleor_auth_token: str):
             query = select(Keys).where(
                 Keys.is_active.is_(True),
                 Keys.saleor_domain == saleor_domain,
-                Keys.saleor_auth_token == saleor_auth_token,
             )
             # breakpoint()
 

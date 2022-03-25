@@ -45,4 +45,5 @@ async def read_inpost_query(post_code: str):
     response = requests.get(INPOST_API_URL, params=query)
 
     data = response.json()
+
     return data
