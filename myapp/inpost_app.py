@@ -1,7 +1,7 @@
 import requests
 
 from myapp.app import app
-from env.manage import INPOST_URL
+from myapp.configuration.settings import INPOST_URL
 
 INPOST_API_URL = INPOST_URL
 
@@ -45,4 +45,5 @@ async def read_inpost_query(post_code: str):
     response = requests.get(INPOST_API_URL, params=query)
 
     data = response.json()
+
     return data
